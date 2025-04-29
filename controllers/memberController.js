@@ -23,6 +23,10 @@ const validateMember = [
     }).withMessage('Incorrect code! Try again!'),
 ];
 
+const validateMessage = [
+    body("message").notEmpty().withMessage('Must contain content.'),
+];
+
 exports.createUserGet = (req,res) => {
     res.render("sign-up-form", {});
 }
@@ -61,7 +65,8 @@ exports.confirmMember = [
                 errors: errors.array(),
             });
         }
-        await db.updateMemberStatus(req.body.username); //replace req.body.username with username stored in passport
+        console.log(req.user);
+        await db.updateMemberStatus(req.user.username); //replace req.body.username with username stored in passport
         res.redirect('/');
     }
 ];
@@ -69,6 +74,29 @@ exports.confirmMember = [
 exports.renderLoginPage = (req,res) => {
     res.render("log-in-form", {});
 }
+
+exports.renderMessagePage = (req,res) => {
+    res.render("new-message-form", {user: req.user});
+}
+
+exports.submitMessagePage = [
+    validateMessage,
+    async (req,res) => {
+        const errors = validationResult(req);
+        if(!errors.isEmpty()) {
+            return res.status(400).render("new-message", {
+                title: "Member",
+                errors: errors.array(),
+            });
+        }
+        const date = new Date();
+        console.log(date);
+        console.log(req.body.message);
+        console.log(req.user.username);
+        await db.addMessage(date,req.body.message,req.user.username);
+        res.redirect('/');
+    }
+];
 
 passport.use(
     new LocalStrategy(async (username, password, done) => {
